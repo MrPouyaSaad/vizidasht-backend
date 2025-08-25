@@ -1,0 +1,31 @@
+{
+  "name": "vizidash-seller-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/app.js",
+    "start": "node src/app.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.1",
+    "@prisma/client": "^6.14.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dot-env": "^0.0.1",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "helmet": "^7.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.1",
+    "zod": "^3.23.8"
+  },
+  "description": "این پروژه یک اسکلت‌بندی مینیمال برای پیاده‌سازی بخش فروشنده **ویزی‌دشت** است: احراز هویت، ثبت‌نام سه‌مرحله‌ای، مدیریت محصول، سفارش، مالی، تیکت و نظرات.",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "prisma": "^6.14.0"
+  }
+}

@@ -1,0 +1,165 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  mobile     String   @unique
+  password   String
+  fullName   String
+  nationalId String
+  role       Role     @default(SELLER)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  sellerProfile SellerProfile?
+}
+
+model SellerProfile {
+  id           Int          @id @default(autoincrement())
+  userId       Int          @unique
+  user         User         @relation(fields: [userId], references: [id])
+  shopName     String?
+  shopPhone    String?
+  licenseId    String
+  licenseTitle String?
+  address      String?
+  status       SellerStatus @default(PENDING)
+  rating       Float        @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  products     Product[]
+  orders       Order[]
+  transactions Transaction[]
+  reviews      Review[]
+  tickets      Ticket[]
+}
+
+model Product {
+  id             Int           @id @default(autoincrement())
+  sellerId       Int
+  seller         SellerProfile @relation(fields: [sellerId], references: [id])
+  title          String
+  imageUrl       String?
+  category       String?
+  packSize       Int           @default(1)
+  expiresAt      DateTime?
+  pricePerPack   Float
+  stockPacks     Int           @default(0)
+  price5         Float?
+  price10        Float?
+  consumerPrice  Float?
+  isAmazingOffer Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  orderItems OrderItem[]
+  reviews    Review[]
+}
+
+model Order {
+  id          Int           @id @default(autoincrement())
+  sellerId    Int
+  seller      SellerProfile @relation(fields: [sellerId], references: [id])
+  buyerId     String // در آینده به مدل Buyer وصل میشه
+  status      OrderStatus   @default(NEW)
+  totalAmount Float
+  paidAmount  Float         @default(0)
+  canCancel   Boolean       @default(true)
+  deliveredAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  items OrderItem[]
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  title     String
+  imageUrl  String?
+  unitPrice Float
+  quantity  Int
+  canCancel Boolean @default(true)
+}
+
+model Transaction {
+  id          Int             @id @default(autoincrement())
+  sellerId    Int
+  seller      SellerProfile   @relation(fields: [sellerId], references: [id])
+  amount      Float
+  type        TransactionType
+  description String?
+  createdAt   DateTime        @default(now())
+}
+
+model Review {
+  id        Int           @id @default(autoincrement())
+  sellerId  Int
+  seller    SellerProfile @relation(fields: [sellerId], references: [id])
+  productId Int?
+  product   Product?      @relation(fields: [productId], references: [id])
+  title     String?
+  text      String?
+  recommend Recommend     @default(RECOMMENDED)
+  stars     Int           @default(5)
+  createdAt DateTime      @default(now())
+}
+
+model Ticket {
+  id        Int           @id @default(autoincrement())
+  sellerId  Int
+  seller    SellerProfile @relation(fields: [sellerId], references: [id])
+  subject   String
+  message   String
+  status    TicketStatus  @default(OPEN)
+  phone     String?
+  createdAt DateTime      @default(now())
+}
+
+enum Role {
+  SELLER
+  ADMIN
+  BUYER
+  DRIVER
+}
+
+enum SellerStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum OrderStatus {
+  NEW
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAW
+}
+
+enum Recommend {
+  RECOMMENDED
+  NOT_RECOMMENDED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
