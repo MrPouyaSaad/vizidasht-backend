@@ -1,5 +1,5 @@
 import express from 'express'
-import { auth } from '../middleware/auth.js'
+import { auth } from '../../../middleware/auth.js'
 import SellerProfile from '../models/SellerProfile.js'
 import Ticket from '../models/Ticket.js'
 import { z } from 'zod'
