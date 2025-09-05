@@ -39,4 +39,6 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`\n🚀 Server listening on port ${PORT}`);
+  console.log("\n🌐 Url => http://localhost:4000/api/**");
+
 });

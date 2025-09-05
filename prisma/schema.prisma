@@ -24,6 +24,8 @@ model User {
   transactions  Transaction[]
   orders        Order[]
   refreshTokens RefreshToken[]
+  ratings       ProductRating[]
+  supportTickets SupportTicket[]
 }
 
 model SellerProfile {
@@ -45,6 +47,8 @@ model SellerProfile {
   updatedAt     DateTime     @updatedAt
   products      Product[]
   orders        Order[]
+  bankCards     BankCard[]
+  ratings       SellerRating[]
 }
 
 enum SellerStatus {
@@ -132,6 +136,7 @@ model Product {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   orderItems    OrderItem[]
+  ratings       ProductRating[]
 }
 
 
@@ -211,6 +216,7 @@ model SupportTicket {
   status    TicketStatus @default(OPEN)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
 }
 
 enum TicketStatus {
