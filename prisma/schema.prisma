@@ -1,137 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model User {
-  id         Int      @id @default(autoincrement())
-  mobile     String   @unique
-  password   String
-  fullName   String
-  nationalId String
-  role       Role     @default(SELLER)
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  username  String?  @unique
+  name      String?
+  email     String?  @unique
+  phone     String   @unique
+  password  String? // برای ادمین‌ها/پسورددارها (هَش شده)
+  role      Role     @default(BUYER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   sellerProfile SellerProfile?
+  driverProfile DriverProfile?
+  transactions  Transaction[]
+  orders        Order[]
+  refreshTokens RefreshToken[]
 }
 
 model SellerProfile {
-  id           Int          @id @default(autoincrement())
-  userId       Int          @unique
-  user         User         @relation(fields: [userId], references: [id])
-  shopName     String?
-  shopPhone    String?
-  licenseId    String
-  licenseTitle String?
-  address      String?
-  status       SellerStatus @default(PENDING)
-  rating       Float        @default(0)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-
-  products     Product[]
-  orders       Order[]
-  transactions Transaction[]
-  reviews      Review[]
-  tickets      Ticket[]
-}
-
-model Product {
-  id             Int           @id @default(autoincrement())
-  sellerId       Int
-  seller         SellerProfile @relation(fields: [sellerId], references: [id])
-  title          String
-  imageUrl       String?
-  category       String?
-  packSize       Int           @default(1)
-  expiresAt      DateTime?
-  pricePerPack   Float
-  stockPacks     Int           @default(0)
-  price5         Float?
-  price10        Float?
-  consumerPrice  Float?
-  isAmazingOffer Boolean       @default(false)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-
-  orderItems OrderItem[]
-  reviews    Review[]
-}
-
-model Order {
-  id          Int           @id @default(autoincrement())
-  sellerId    Int
-  seller      SellerProfile @relation(fields: [sellerId], references: [id])
-  buyerId     String // در آینده به مدل Buyer وصل میشه
-  status      OrderStatus   @default(NEW)
-  totalAmount Float
-  paidAmount  Float         @default(0)
-  canCancel   Boolean       @default(true)
-  deliveredAt DateTime?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  items OrderItem[]
-}
-
-model OrderItem {
-  id        Int     @id @default(autoincrement())
-  orderId   Int
-  order     Order   @relation(fields: [orderId], references: [id])
-  productId Int
-  product   Product @relation(fields: [productId], references: [id])
-  title     String
-  imageUrl  String?
-  unitPrice Float
-  quantity  Int
-  canCancel Boolean @default(true)
-}
-
-model Transaction {
-  id          Int             @id @default(autoincrement())
-  sellerId    Int
-  seller      SellerProfile   @relation(fields: [sellerId], references: [id])
-  amount      Float
-  type        TransactionType
-  description String?
-  createdAt   DateTime        @default(now())
-}
-
-model Review {
-  id        Int           @id @default(autoincrement())
-  sellerId  Int
-  seller    SellerProfile @relation(fields: [sellerId], references: [id])
-  productId Int?
-  product   Product?      @relation(fields: [productId], references: [id])
-  title     String?
-  text      String?
-  recommend Recommend     @default(RECOMMENDED)
-  stars     Int           @default(5)
-  createdAt DateTime      @default(now())
-}
-
-model Ticket {
-  id        Int           @id @default(autoincrement())
-  sellerId  Int
-  seller    SellerProfile @relation(fields: [sellerId], references: [id])
-  subject   String
-  message   String
-  status    TicketStatus  @default(OPEN)
-  phone     String?
-  createdAt DateTime      @default(now())
-}
-
-enum Role {
-  SELLER
-  ADMIN
-  BUYER
-  DRIVER
+  id            Int          @id @default(autoincrement())
+  userId        Int          @unique
+  user          User         @relation(fields: [userId], references: [id])
+  firstName     String
+  lastName      String
+  nationalId    String
+  phone         String
+  storePhone    String
+  storeName     String
+  businessId    String
+  businessTitle String
+  storeAddress  String
+  status        SellerStatus @default(PENDING)
+  step          Int          @default(1) // مرحله جاری (1=identity, 2=business, 3=otp, 4=active)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  products      Product[]
+  orders        Order[]
 }
 
 enum SellerStatus {
@@ -140,26 +53,221 @@ enum SellerStatus {
   REJECTED
 }
 
+model ProductRating {
+  id         Int      @id @default(autoincrement())
+  productId  Int
+  product    Product  @relation(fields: [productId], references: [id])
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+  score      Float    // از 0.5 تا 5 (با steps نیم ستاره)
+  comment    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([productId, userId]) // هر کاربر فقط یکبار به هر محصول امتیاز دهد
+}
+
+model SellerRating {
+  id        Int      @id @default(autoincrement())
+  sellerId  Int
+  seller    SellerProfile @relation(fields: [sellerId], references: [id])
+  score     Int      // از 1 تا 5
+  comment   String?
+  createdAt DateTime @default(now())
+}
+
+model BankCard {
+  id         Int      @id @default(autoincrement())
+  sellerId   Int
+  seller     SellerProfile @relation(fields: [sellerId], references: [id])
+  cardNumber String   @unique
+  shaba      String   @unique
+  bankName   String
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+
+
+model DriverProfile {
+  id          Int          @id @default(autoincrement())
+  userId      Int          @unique
+  user        User         @relation(fields: [userId], references: [id])
+  nationalId  String
+  licenseNo   String
+  vehicleType String
+  status      DriverStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now())
+}
+
+enum DriverStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  products Product[]
+}
+
+model Product {
+  id            Int           @id @default(autoincrement())
+  sellerId      Int
+  seller        SellerProfile @relation(fields: [sellerId], references: [id])
+  categoryId    Int
+  category      Category      @relation(fields: [categoryId], references: [id])
+  name          String
+  image         String
+  stock         Int
+  price         Float
+  pricePack5    Float?
+  pricePack10   Float?
+  consumerPrice Float // اجباری
+  discount      Float?
+  expireDate    DateTime?
+  specialOffer  Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  orderItems    OrderItem[]
+}
+
+
+model Order {
+  id           Int           @id @default(autoincrement())
+  userId       Int
+  user         User          @relation(fields: [userId], references: [id])
+  sellerId     Int
+  seller       SellerProfile @relation(fields: [sellerId], references: [id])
+  totalAmount  Float
+  status       OrderStatus   @default(PENDING)
+  orderDate    DateTime      @default(now())
+  deliveryTime DateTime?
+  label        String?
+  items        OrderItem[]
+  isSeen       Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model OrderItem {
+  id         Int     @id @default(autoincrement())
+  orderId    Int
+  order      Order   @relation(fields: [orderId], references: [id])
+  productId  Int
+  product    Product @relation(fields: [productId], references: [id])
+  quantity   Int
+  price      Float
+  cancelable Boolean @default(true)
+}
+
 enum OrderStatus {
-  NEW
-  CONFIRMED
-  SHIPPED
+  PENDING
   DELIVERED
   CANCELLED
 }
 
-enum TransactionType {
-  DEPOSIT
-  WITHDRAW
+model Transaction {
+  id          Int             @id @default(autoincrement())
+  userId      Int
+  user        User            @relation(fields: [userId], references: [id])
+  amount      Float
+  type        TransactionType
+  description String?
+  label       String? // واریز یا برداشت
+  createdAt   DateTime        @default(now())
 }
 
-enum Recommend {
-  RECOMMENDED
-  NOT_RECOMMENDED
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model OtpCode {
+  id        Int        @id @default(autoincrement())
+  phone     String
+  code      String
+  purpose   OtpPurpose
+  roleHint  Role? // برای تفکیک سناریوها (BUYER/SELLER/DRIVER)
+  expiresAt DateTime
+  consumed  Boolean    @default(false)
+  createdAt DateTime   @default(now())
+
+  @@index([phone, purpose, consumed])
+}
+
+model SupportTicket {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  status    TicketStatus @default(OPEN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum TicketStatus {
   OPEN
   IN_PROGRESS
   CLOSED
+}
+
+model FAQCategory {
+  id    Int    @id @default(autoincrement())
+  title String
+
+  faqs  FAQ[]
+}
+
+model FAQ {
+  id          Int      @id @default(autoincrement())
+  categoryId  Int
+  category    FAQCategory @relation(fields: [categoryId], references: [id])
+  question    String
+  answer      String
+  createdAt   DateTime @default(now())
+}
+
+model PenaltyCategory {
+  id    Int    @id @default(autoincrement())
+  title String
+
+  penalties Penalty[]
+}
+
+model Penalty {
+  id          Int      @id @default(autoincrement())
+  categoryId  Int
+  category    PenaltyCategory @relation(fields: [categoryId], references: [id])
+  title       String
+  description String
+  createdAt   DateTime @default(now())
+}
+
+
+enum Role {
+  ADMIN
+  SELLER
+  BUYER
+  DRIVER
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAW
+  PURCHASE
+  REFUND
+}
+
+enum OtpPurpose {
+  LOGIN
+  REGISTER
+  PASSWORD_RESET
 }
